@@ -1,0 +1,3635 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neural City — Urban Intelligence Dashboard</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+  <style>
+    :root {
+      --bg: #0e1016;
+      --bg2: #141720;
+      --bg3: #1a1e2c;
+      --bg4: #20253a;
+      --card: #181c28;
+      --card2: #1e2338;
+      --border: rgba(255, 255, 255, 0.07);
+      --border2: rgba(255, 255, 255, 0.13);
+      --text: #e8ecf4;
+      --text2: #8b92aa;
+      --text3: #50596e;
+      --gold: #f5a623;
+      --green: #4ade80;
+      --red: #f87171;
+      --accent: #4f9cf9;
+      --accent2: #818cf8;
+      --teal: #2dd4bf;
+    }
+
+    [data-theme="light"] {
+      --bg: #f2f4f8;
+      --bg2: #e8ecf2;
+      --bg3: #dde3ed;
+      --bg4: #d0d8e8;
+      --card: #ffffff;
+      --card2: #f7f9fc;
+      --border: rgba(0, 0, 0, 0.08);
+      --border2: rgba(0, 0, 0, 0.15);
+      --text: #0f1420;
+      --text2: #4a5270;
+      --text3: #9aa3c0;
+      --gold: #d97706;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "DM Sans", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      font-size: 14px;
+    }
+
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg2);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border2);
+      border-radius: 3px;
+    }
+
+    /* TOPBAR — exactly like Neural City */
+    .topbar {
+      height: 56px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 1.5rem;
+      gap: 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+    }
+
+    .nc-logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border: 1.5px solid var(--border2);
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 11px;
+      letter-spacing: 0.02em;
+      line-height: 1.1;
+      color: var(--text);
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 2px;
+      flex: 1;
+      justify-content: center;
+    }
+
+    .nav-tab {
+      padding: 7px 18px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: var(--text2);
+      font-family: "DM Sans", sans-serif;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .nav-tab:hover {
+      background: var(--bg3);
+      color: var(--text);
+    }
+
+    .nav-tab.active {
+      background: var(--bg3);
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .city-pill {
+      background: var(--accent);
+      color: #fff;
+      padding: 7px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      border: 1px solid var(--border2);
+      background: transparent;
+      color: var(--text2);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      transition: all 0.2s;
+    }
+
+    .icon-btn:hover {
+      background: var(--bg3);
+      color: var(--text);
+    }
+
+    .signout-btn {
+      padding: 7px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border2);
+      background: transparent;
+      color: var(--text);
+      font-family: "DM Sans", sans-serif;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    /* MAIN LAYOUT */
+    .layout {
+      display: flex;
+      min-height: calc(100vh - 56px);
+    }
+
+    .sidebar {
+      width: 220px;
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      padding: 1rem 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .sidebar-label {
+      font-size: 10px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+      padding: 8px 8px 4px;
+    }
+
+    .city-row {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 8px 10px;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: all 0.18s;
+      border: 1px solid transparent;
+    }
+
+    .city-row:hover {
+      background: var(--bg3);
+    }
+
+    .city-row.active {
+      background: rgba(79, 156, 249, 0.12);
+      border-color: rgba(79, 156, 249, 0.25);
+    }
+
+    .city-row-rank {
+      width: 20px;
+      height: 20px;
+      border-radius: 5px;
+      background: var(--bg3);
+      font-size: 10px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text2);
+      flex-shrink: 0;
+    }
+
+    .city-row-rank.r1 {
+      background: rgba(245, 166, 35, 0.2);
+      color: #f5a623;
+    }
+
+    .city-row-rank.r2 {
+      background: rgba(148, 163, 184, 0.2);
+      color: #94a3b8;
+    }
+
+    .city-row-rank.r3 {
+      background: rgba(180, 100, 9, 0.2);
+      color: #b36209;
+    }
+
+    .city-row-name {
+      font-size: 12.5px;
+      font-weight: 500;
+      flex: 1;
+    }
+
+    .city-row-score {
+      font-size: 11px;
+      font-weight: 700;
+      font-family: "IBM Plex Mono", monospace;
+      color: var(--gold);
+    }
+
+    /* CONTENT */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      max-height: calc(100vh - 56px);
+       touch-action: pan-y;   /* add this line */
+  -webkit-overflow-scrolling: touch;  /* add this line */
+    }
+
+    /* TABS PANEL */
+    .tab-panel {
+      display: none;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .tab-panel.active {
+      display: flex;
+    }
+
+    /* ===== DASHBOARD TAB ===== */
+    .dash-top {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 1.25rem 1.5rem;
+    }
+
+    /* Hero row — exactly like the screenshot */
+    .hero-row {
+      display: grid;
+      grid-template-columns: 200px 1fr 1fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .hero-city-block {
+      background: var(--bg3);
+      border-radius: 12px;
+      padding: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero-city-name {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+    }
+
+    .stat-block {
+      background: var(--bg3);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .stat-block-label {
+      font-size: 11px;
+      color: var(--text2);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .stat-block-val {
+      font-size: 1.5rem;
+      font-weight: 700;
+      font-family: "IBM Plex Mono", monospace;
+      color: var(--text);
+    }
+
+    .stat-block-val.blue {
+      color: var(--accent);
+    }
+
+    .wards-prog {
+      height: 3px;
+      background: var(--border2);
+      border-radius: 2px;
+      margin-top: 6px;
+      overflow: hidden;
+    }
+
+    .wards-prog-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+    }
+
+    /* Scores row */
+    .scores-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 0;
+    }
+
+    .scores-row-2 {
+      display: grid;
+      grid-template-columns: 240px 1fr 1fr 1fr;
+      gap: 10px;
+    }
+
+    .score-cell {
+      background: var(--bg3);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+    }
+
+    .score-cell-label {
+      font-size: 12px;
+      color: var(--text2);
+      margin-bottom: 4px;
+    }
+
+    .score-cell-val {
+      font-size: 1.5rem;
+      font-weight: 700;
+      font-family: "IBM Plex Mono", monospace;
+    }
+
+    .score-cell-val.gold {
+      color: var(--gold);
+    }
+
+    .criteria-cell {
+      background: var(--bg3);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+    }
+
+    .criteria-title {
+      font-size: 12px;
+      color: var(--text2);
+      margin-bottom: 8px;
+    }
+
+    .criteria-dots {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .dot-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* SECTION CARDS */
+    .section-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr) 1fr;
+      gap: 10px;
+      padding: 1.25rem 1.5rem;
+      background: var(--bg);
+    }
+
+    .area-card {
+      background: var(--card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 1rem;
+    }
+
+    .area-card-header {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 10px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .area-card-icon {
+      font-size: 15px;
+    }
+
+    .area-stat-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin-bottom: 3px;
+    }
+
+    .area-stat-label {
+      color: var(--text2);
+    }
+
+    .area-stat-val {
+      font-weight: 600;
+      font-family: "IBM Plex Mono", monospace;
+    }
+
+    .area-stat-val.g {
+      color: var(--green);
+    }
+
+    .area-stat-val.a {
+      color: var(--gold);
+    }
+
+    .area-stat-val.r {
+      color: var(--red);
+    }
+
+    .area-bar {
+      height: 4px;
+      border-radius: 2px;
+      margin-top: 10px;
+      overflow: hidden;
+      display: flex;
+      gap: 2px;
+    }
+
+    .area-bar-g {
+      height: 100%;
+      background: var(--green);
+      border-radius: 2px;
+    }
+
+    .area-bar-a {
+      height: 100%;
+      background: var(--gold);
+    }
+
+    .area-bar-r {
+      height: 100%;
+      background: var(--red);
+      border-radius: 2px;
+    }
+
+    .area-pct {
+      font-size: 10px;
+      color: var(--text3);
+      margin-top: 4px;
+    }
+
+    .insights-card {
+      background: var(--card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow-y: auto;
+      max-height: 220px;
+    }
+
+    .insights-title {
+      font-size: 10px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .insight-chip {
+      background: var(--bg3);
+      border-radius: 8px;
+      padding: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .insight-text {
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.35;
+      flex: 1;
+    }
+
+    .insight-score {
+      font-size: 14px;
+      font-weight: 700;
+      font-family: "IBM Plex Mono", monospace;
+      color: var(--gold);
+      flex-shrink: 0;
+    }
+
+    .insight-sub {
+      font-size: 11px;
+      color: var(--text2);
+      margin-top: 3px;
+      line-height: 1.4;
+    }
+
+    /* MAP + TABLE section */
+    .map-table-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 0 1.5rem 1.5rem;
+    }
+
+    .map-container {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      height: 340px;
+    }
+
+    .map-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--card);
+    }
+
+    .map-header-title {
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    #leaflet-map {
+      height: calc(340px - 41px);
+      width: 100%;
+    }
+
+    .table-container {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      height: 340px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .table-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .table-search {
+      flex: 1;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 5px 10px;
+      color: var(--text);
+      font-family: "DM Sans", sans-serif;
+      font-size: 12px;
+      outline: none;
+    }
+
+    .table-search::placeholder {
+      color: var(--text3);
+    }
+
+    .filter-btn {
+      padding: 5px 12px;
+      border-radius: 7px;
+      border: 1px solid var(--border2);
+      background: transparent;
+      color: var(--text2);
+      font-size: 11px;
+      font-family: "DM Sans", sans-serif;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filter-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .area-select {
+      padding: 5px 10px;
+      border-radius: 7px;
+      border: 1px solid var(--border2);
+      background: var(--bg3);
+      color: var(--text);
+      font-size: 12px;
+      font-family: "DM Sans", sans-serif;
+      cursor: pointer;
+    }
+
+    .table-wrap {
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .data-table th {
+      padding: 7px 10px;
+      text-align: left;
+      font-size: 10px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 700;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--card);
+      z-index: 1;
+    }
+
+    .data-table th .wt {
+      display: block;
+      font-size: 9px;
+      color: var(--text3);
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .data-table td {
+      padding: 7px 10px;
+      border-bottom: 1px solid var(--border);
+      font-family: "IBM Plex Mono", monospace;
+    }
+
+    .data-table tr:hover td {
+      background: var(--bg3);
+    }
+
+    .data-table td.name {
+      font-family: "DM Sans", sans-serif;
+      font-weight: 500;
+      font-size: 12px;
+      color: var(--text);
+    }
+
+    .sc-good {
+      color: var(--green);
+    }
+
+    .sc-avg {
+      color: var(--gold);
+    }
+
+    .sc-poor {
+      color: var(--red);
+    }
+
+    .sc-na {
+      color: var(--text3);
+    }
+
+    /* ===== AQI TAB ===== */
+    .aqi-panel {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .aqi-hero {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 1rem;
+    }
+
+    .aqi-gauge-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .aqi-charts-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .pollutant-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    .poll-chip {
+      background: var(--bg3);
+      border-radius: 9px;
+      padding: 10px 12px;
+    }
+
+    .poll-chip-name {
+      font-size: 10px;
+      color: var(--text3);
+      font-family: "IBM Plex Mono", monospace;
+      font-weight: 500;
+    }
+
+    .poll-chip-val {
+      font-size: 1.2rem;
+      font-weight: 700;
+      font-family: "IBM Plex Mono", monospace;
+      margin-top: 2px;
+    }
+
+    .poll-chip-unit {
+      font-size: 9px;
+      color: var(--text3);
+      margin-top: 1px;
+    }
+
+    .poll-chip-bar {
+      height: 2px;
+      background: var(--border2);
+      border-radius: 1px;
+      margin-top: 7px;
+      overflow: hidden;
+    }
+
+    .poll-chip-fill {
+      height: 100%;
+      border-radius: 1px;
+    }
+
+    /* ===== TRANSPORT TAB ===== */
+    .transport-panel {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .transport-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .t-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.1rem;
+    }
+
+    .t-card-icon {
+      font-size: 22px;
+      margin-bottom: 8px;
+    }
+
+    .t-card-label {
+      font-size: 11px;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+
+    .t-card-val {
+      font-size: 1.4rem;
+      font-weight: 700;
+      font-family: "IBM Plex Mono", monospace;
+      color: var(--accent);
+      margin-top: 4px;
+    }
+
+    .t-card-sub {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 3px;
+    }
+
+    .t-status {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      margin-right: 4px;
+    }
+
+    .t-on {
+      background: var(--green);
+    }
+
+    .t-off {
+      background: var(--red);
+    }
+
+    /* SWACHH TAB */
+    .swachh-panel {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* COMPARE TAB */
+    .compare-panel {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .compare-table-wrap {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .compare-data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .compare-data-table th {
+      padding: 9px 12px;
+      text-align: left;
+      font-size: 10px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 700;
+      border-bottom: 1px solid var(--border);
+      background: var(--card);
+    }
+
+    .compare-data-table td {
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .compare-data-table tr:hover td {
+      background: var(--bg3);
+    }
+
+    .compare-data-table td.city-name-td {
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .sbar {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .sbar-bg {
+      width: 80px;
+      height: 4px;
+      background: var(--bg3);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .sbar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+    }
+
+    .rank-pill {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      background: var(--bg3);
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* SHARED */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .section-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .section-label::before {
+      content: "";
+      width: 3px;
+      height: 13px;
+      background: var(--accent);
+      border-radius: 2px;
+      display: block;
+    }
+
+    .chart-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.1rem;
+    }
+
+    .chart-title {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .badge {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+
+    .badge-green {
+      background: rgba(74, 222, 128, 0.12);
+      color: var(--green);
+    }
+
+    .badge-amber {
+      background: rgba(245, 166, 35, 0.12);
+      color: var(--gold);
+    }
+
+    .badge-red {
+      background: rgba(248, 113, 113, 0.12);
+      color: var(--red);
+    }
+
+    .badge-blue {
+      background: rgba(79, 156, 249, 0.12);
+      color: var(--accent);
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .three-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1rem;
+    }
+
+    /* Replace your existing @media blocks with this: */
+
+    @media (max-width: 900px) {
+      .sidebar {
+        display: none;
+      }
+
+      .hero-row {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .section-cards {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .map-table-row {
+        grid-template-columns: 1fr;
+      }
+
+      .transport-summary-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+
+      .three-col {
+        grid-template-columns: 1fr;
+      }
+
+      .aqi-hero {
+        grid-template-columns: 1fr;
+      }
+
+      .pollutant-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .topbar {
+        padding: 0 0.75rem;
+        gap: 0.5rem;
+      }
+
+      .nav-tabs {
+        gap: 1px;
+      }
+
+      .nav-tab {
+        padding: 5px 10px;
+        font-size: 12px;
+      }
+
+      .city-pill {
+        padding: 5px 10px;
+        font-size: 12px;
+      }
+
+      .signout-btn {
+        display: none;
+      }
+
+      .hero-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
+
+      .hero-city-block {
+        grid-column: 1 / -1;
+        padding: 0.75rem;
+      }
+
+      .hero-city-name {
+        font-size: 1.4rem;
+      }
+
+      .stat-block {
+        padding: 0.75rem;
+      }
+
+      .stat-block-val {
+        font-size: 1.1rem;
+      }
+
+      /* Score rows */
+      div[style*="grid-template-columns: 1fr 1fr 1fr 1fr"] {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px !important;
+      }
+
+      div[style*="grid-template-columns: 240px 1fr 1fr 1fr"] {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px !important;
+      }
+
+      .criteria-cell {
+        grid-column: 1 / -1;
+      }
+
+      .section-cards {
+        grid-template-columns: 1fr;
+        padding: 0.75rem;
+        gap: 8px;
+      }
+
+      .map-table-row {
+        padding: 0 0.75rem 0.75rem;
+        gap: 8px;
+      }
+
+      .map-container {
+        height: 260px;
+      }
+
+      #leaflet-map {
+        height: calc(260px - 41px);
+      }
+
+      .table-container {
+        height: 300px;
+      }
+
+      .table-header {
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 8px;
+      }
+
+      .table-search {
+        min-width: 0;
+        flex: 1;
+      }
+
+      .aqi-panel,
+      .transport-panel,
+      .swachh-panel,
+      .compare-panel {
+        padding: 0.75rem;
+        gap: 0.75rem;
+      }
+
+      .pollutant-grid {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+
+      .transport-summary-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .two-col,
+      .three-col {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+      }
+
+      .compare-table-wrap {
+        overflow-x: auto;
+      }
+
+      .compare-data-table {
+        min-width: 600px;
+      }
+
+      /* inner sub-tabs scrollable */
+      #panel-dashboard>div:first-child {
+        overflow-x: auto;
+        padding: 0 0.75rem;
+        gap: 2px;
+      }
+
+      #panel-dashboard>div:first-child .nav-tab {
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+    }
+
+    /* @media (max-width: 900px) {
+        .sidebar {
+          display: none;
+        }
+        .hero-row {
+          grid-template-columns: 1fr 1fr;
+          grid-template-rows: auto auto auto;
+        }
+        .scores-row,
+        .scores-row-2 {
+          grid-template-columns: 1fr 1fr;
+        }
+        .section-cards {
+          grid-template-columns: 1fr 1fr;
+        }
+        .map-table-row {
+          grid-template-columns: 1fr;
+        }
+        .transport-summary-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      } */
+    /* @media (max-width: 600px) {
+        .hero-row {
+          grid-template-columns: 1fr;
+        }
+        .scores-row,
+        .scores-row-2 {
+          grid-template-columns: 1fr;
+        }
+        .two-col,
+        .three-col {
+          grid-template-columns: 1fr;
+        }
+      } */
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fadein {
+      animation: fadeUp 0.35s ease forwards;
+    }
+
+    /* Leaflet dark overrides */
+    .leaflet-tile {
+      filter: brightness(0.7) saturate(0.5);
+    }
+
+    [data-theme="light"] .leaflet-tile {
+      filter: none;
+    }
+
+    .leaflet-popup-content-wrapper {
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid var(--border2);
+      border-radius: 10px;
+      box-shadow: none;
+    }
+
+    .leaflet-popup-tip {
+      background: var(--card);
+    }
+
+    .logo-mark img {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+    }
+
+    img {
+      overflow-clip-margin: content-box;
+      overflow: clip;
+    }
+
+    .logo-mark {
+      width: 36px;
+      height: 36px;
+      background: transparent;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="logo-mark">
+      <img src="assets/logo.png" alt="Neural City Logo">
+    </div>
+    <div class="nav-tabs">
+
+      <button class="nav-tab" onclick="window.open('other.html','_blank')">
+        City Ranking
+      </button>
+      <button class="nav-tab active" onclick="switchMain('dashboard', this)">
+        Dashboard
+      </button>
+      <button class="nav-tab" onclick="switchMain('mapview', this)">
+        Map View
+      </button>
+
+    </div>
+    <button class="city-pill" id="active-city-pill">Bengaluru</button>
+    <div class="topbar-right">
+
+      <button class="icon-btn" onclick="toggleTheme()" id="theme-btn" title="Toggle theme">
+        🌙
+      </button>
+      <button class="signout-btn">Sign out</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-label">Cities</div>
+      <div id="city-list"></div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+      <!-- SECONDARY TABS inside Dashboard -->
+      <div class="tab-panel active" id="panel-dashboard">
+        <!-- inner tabs row -->
+        <!-- <div
+            style="
+              background: var(--bg2);
+              border-bottom: 1px solid var(--border);
+              padding: 0 1.5rem;
+              display: flex;
+              gap: 4px;
+              align-items: center;
+              height: 44px;
+            "
+          > -->
+        <div
+          style="background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0 0.75rem; display: flex; gap: 2px; align-items: center; height: 44px; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+        </div>
+        <button class="nav-tab active" style="font-size: 12px; padding: 5px 14px; white-space: nowrap;" onclick="switchDash('main', this)">
+          Dashboard
+        </button>
+        <button class="nav-tab" style="font-size: 12px; padding: 5px 14px; white-space: nowrap;" onclick="switchDash('aqi', this)">
+          Air Quality
+        </button>
+        <button class="nav-tab" style="font-size: 12px; padding: 5px 14px; white-space: nowrap;" onclick="switchDash('transport', this)">
+          Public Transport
+        </button>
+        <button class="nav-tab" style="font-size: 12px; padding: 5px 14px; white-space: nowrap;" onclick="switchDash('swachh', this)">
+          Swachh Rankings
+        </button>
+        <button class="nav-tab" style="font-size: 12px; padding: 5px 14px; white-space: nowrap" onclick="switchDash('compare', this)">
+          Compare Cities
+        </button>
+      </div>
+
+      <!-- MAIN DASH -->
+      <div id="dash-main" class="tab-panel active">
+        <div class="dash-top">
+          <!-- Hero row -->
+          <div class="hero-row" id="hero-row">
+            <div class="hero-city-block">
+              <div class="hero-city-name" id="hero-city-name">
+                Bengaluru
+              </div>
+            </div>
+            <div class="stat-block">
+              <div class="stat-block-label">Rank</div>
+              <div class="stat-block-val" id="stat-rank">#1/10</div>
+            </div>
+            <div class="stat-block">
+              <div class="stat-block-label">Data Points</div>
+              <div class="stat-block-val" id="stat-dp">3,277</div>
+            </div>
+            <div class="stat-block">
+              <div class="stat-block-label">Roads (km)</div>
+              <div class="stat-block-val" id="stat-roads">20.1</div>
+            </div>
+            <div class="stat-block">
+              <div class="stat-block-label">Wards Covered</div>
+              <div class="stat-block-val blue" id="stat-wards">24/243</div>
+              <div class="wards-prog">
+                <div class="wards-prog-fill" id="wards-fill" style="width: 10%"></div>
+              </div>
+            </div>
+          </div>
+          <!-- Scores rows -->
+
+          <div style="
+                  display: grid;
+                  grid-template-columns: 1fr 1fr 1fr 1fr;
+                  gap: 10px;
+                  margin-bottom: 10px;
+                ">
+            <div class="score-cell">
+              <div class="score-cell-label">Overall Score</div>
+              <div class="score-cell-val gold" id="sc-overall">49.71</div>
+            </div>
+            <div class="score-cell">
+              <div class="score-cell-label">Cleanliness</div>
+              <div class="score-cell-val gold" id="sc-clean">55.2</div>
+            </div>
+            <div class="score-cell">
+              <div class="score-cell-label">Walkability</div>
+              <div class="score-cell-val gold" id="sc-walk">45.7</div>
+            </div>
+            <div class="score-cell">
+              <div class="score-cell-label">Road Quality</div>
+              <div class="score-cell-val gold" id="sc-road">49.5</div>
+            </div>
+
+          </div>
+          <div style="
+                  display: grid;
+                  grid-template-columns: 240px 1fr 1fr 1fr;
+                  gap: 10px;
+                ">
+            <div class="criteria-cell">
+              <div class="criteria-title">Scoring Criteria</div>
+              <div class="criteria-dots">
+                <div class="dot-item">
+                  <div class="dot" style="background: var(--red)"></div>
+                  <span>0–35 Poor</span>
+                </div>
+                <div class="dot-item">
+                  <div class="dot" style="background: var(--gold)"></div>
+                  <span>36–65 Avg</span>
+                </div>
+                <div class="dot-item">
+                  <div class="dot" style="background: var(--green)"></div>
+                  <span>66+ Good</span>
+                </div>
+              </div>
+            </div>
+            <div class="score-cell">
+              <div class="score-cell-label">AQI (Dust+Air)</div>
+              <div class="score-cell-val gold" id="sc-aqi">47.3</div>
+            </div>
+            <div class="score-cell">
+              <div class="score-cell-label">Encroachment Control</div>
+              <div class="score-cell-val gold" id="sc-enc">61.2</div>
+            </div>
+            <div class="score-cell">
+              <div class="score-cell-label">Aesthetics</div>
+              <div class="score-cell-val gold" id="sc-aes">54.7</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION CARDS: Wards, Roads, Tourist, Transit + Insights -->
+        <div class="section-cards" id="section-cards"></div>
+
+        <!-- MAP + TABLE -->
+        <div class="map-table-row">
+          <div class="map-container">
+            <div class="map-header">
+              <div class="map-header-title">
+                Ward Map — <span id="map-city-label">Bengaluru</span>
+              </div>
+              <div class="badge badge-blue">Live Data</div>
+            </div>
+            <div id="leaflet-map"></div>
+          </div>
+          <div class="table-container">
+            <div class="table-header">
+              <select class="area-select" id="area-type-select" onchange="filterTable()">
+                <option value="Wards">Wards</option>
+                <option value="Roads">Roads</option>
+                <option value="Tourist">Tourist Areas</option>
+                <option value="Transit">Transit Hubs</option>
+              </select>
+              <input class="table-search" id="table-search" placeholder="Search wards..." oninput="filterTable()" />
+              <button class="filter-btn active" onclick="setFilter('all', this)">
+                All Areas
+              </button>
+              <button class="filter-btn" onclick="setFilter('top5', this)">
+                Top 5
+              </button>
+              <button class="filter-btn" onclick="setFilter('bot5', this)">
+                Bottom 5
+              </button>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Area Name</th>
+                    <th>Overall Score</th>
+                    <th>Cleanliness<span class="wt">wt: 1</span></th>
+                    <th>Walkability<span class="wt">wt: 1</span></th>
+                    <th>Road Quality<span class="wt">wt: 1</span></th>
+                    <th>AQI<span class="wt">wt: 1</span></th>
+                    <th>Encroachment<span class="wt">wt: 1</span></th>
+                    <th>Aesthetics<span class="wt">wt: 0.5</span></th>
+                  </tr>
+                </thead>
+                <tbody id="ward-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- end dash-main -->
+
+      <!-- AQI SUB-PANEL -->
+      <div id="dash-aqi" class="tab-panel">
+        <div class="aqi-panel">
+          <div class="aqi-hero">
+            <div class="aqi-gauge-card">
+              <div style="
+                      font-size: 13px;
+                      color: var(--text2);
+                      font-weight: 600;
+                      align-self: flex-start;
+                    ">
+                AQI Index
+              </div>
+              <svg viewBox="0 0 180 100" width="180" height="100" style="overflow: visible">
+                <path d="M 10 90 A 80 80 0 0 1 170 90" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="14"
+                  stroke-linecap="round" />
+                <path d="M 10 90 A 80 80 0 0 1 170 90" fill="none" stroke="url(#aqiG)" stroke-width="14"
+                  stroke-linecap="round" />
+                <defs>
+                  <linearGradient id="aqiG" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#4ade80" />
+                    <stop offset="30%" stop-color="#f5a623" />
+                    <stop offset="60%" stop-color="#f97316" />
+                    <stop offset="85%" stop-color="#f87171" />
+                    <stop offset="100%" stop-color="#c084fc" />
+                  </linearGradient>
+                </defs>
+                <line id="aqi-needle" x1="90" y1="90" x2="90" y2="22" stroke="white" stroke-width="2.5"
+                  stroke-linecap="round" />
+                <circle cx="90" cy="90" r="5" fill="white" />
+              </svg>
+              <div style="
+                      font-size: 2.5rem;
+                      font-weight: 700;
+                      font-family: &quot;IBM Plex Mono&quot;, monospace;
+                    " id="aqi-number">
+                156
+              </div>
+              <div style="
+                      font-size: 12px;
+                      padding: 4px 12px;
+                      border-radius: 8px;
+                      font-weight: 600;
+                    " id="aqi-cat-badge">
+                Unhealthy for Sensitive
+              </div>
+              <div style="font-size: 11px; color: var(--text3)" id="aqi-city-lbl">
+                Bengaluru · CPCB
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px">
+              <div class="pollutant-grid" id="poll-grid"></div>
+              <div class="chart-card">
+                <div class="chart-title" style="font-size: 12px; color: var(--text2)">
+                  24-hr AQI Trend
+                </div>
+                <div style="position: relative; height: 75px">
+                  <canvas id="aqi-mini" role="img" aria-label="24h AQI trend">AQI over 24 hours.</canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="two-col">
+            <div class="chart-card">
+              <div style="
+                      display: flex;
+                      justify-content: space-between;
+                      align-items: center;
+                      margin-bottom: 10px;
+                    ">
+                <div class="chart-title">Monthly AQI — All Cities</div>
+                <div class="badge badge-amber">CPCB 2024</div>
+              </div>
+              <div style="position: relative; height: 220px">
+                <canvas id="aqi-city-chart" role="img" aria-label="Monthly AQI comparison">AQI chart.</canvas>
+              </div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-title" style="margin-bottom: 10px">
+                AQI Category Distribution
+              </div>
+              <div style="position: relative; height: 220px">
+                <canvas id="aqi-pie" role="img" aria-label="AQI category pie">Pie chart.</canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRANSPORT SUB-PANEL -->
+      <div id="dash-transport" class="tab-panel">
+        <div class="transport-panel">
+          <div class="transport-summary-grid" id="transport-grid"></div>
+          <div class="two-col">
+            <div class="chart-card">
+              <div style="
+                      display: flex;
+                      justify-content: space-between;
+                      align-items: center;
+                      margin-bottom: 10px;
+                    ">
+                <div class="chart-title">Transport Score by City</div>
+                <div class="badge badge-blue">MoHUA</div>
+              </div>
+              <div style="position: relative; height: 220px">
+                <canvas id="transport-bar" role="img" aria-label="Transport scores bar">Transport bar.</canvas>
+              </div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-title" style="margin-bottom: 10px">
+                Fleet Breakdown
+              </div>
+              <div style="position: relative; height: 220px">
+                <canvas id="fleet-chart" role="img" aria-label="Fleet breakdown">Fleet chart.</canvas>
+              </div>
+            </div>
+          </div>
+          <div class="three-col">
+            <div class="chart-card">
+              <div class="chart-title" style="margin-bottom: 8px">
+                Metro Networks
+              </div>
+              <div id="metro-list" style="display: flex; flex-direction: column; gap: 6px"></div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-title" style="margin-bottom: 8px">
+                Bus Rapid Transit
+              </div>
+              <div id="brt-list" style="display: flex; flex-direction: column; gap: 6px"></div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-title" style="margin-bottom: 8px">
+                e-Bus Fleet
+              </div>
+              <div id="ev-list" style="display: flex; flex-direction: column; gap: 6px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SWACHH SUB-PANEL -->
+      <div id="dash-swachh" class="tab-panel">
+        <div class="swachh-panel">
+          <div class="chart-card">
+            <div style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 10px;
+                  ">
+              <div class="chart-title">
+                Swachh Survekshan 2024 — Rankings
+              </div>
+              <div class="badge badge-green">MoHUA</div>
+            </div>
+            <div style="position: relative; height: 280px">
+              <canvas id="swachh-chart" role="img" aria-label="Swachh scores">Swachh chart.</canvas>
+            </div>
+          </div>
+          <div class="two-col">
+            <div class="chart-card">
+              <div class="chart-title" style="margin-bottom: 10px">
+                Waste Management
+              </div>
+              <div id="waste-bars" style="display: flex; flex-direction: column; gap: 10px"></div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-title" style="margin-bottom: 10px">
+                ODF & Water Status
+              </div>
+              <div id="odf-grid" style="
+                      display: grid;
+                      grid-template-columns: 1fr 1fr;
+                      gap: 8px;
+                    "></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COMPARE SUB-PANEL -->
+      <div id="dash-compare" class="tab-panel">
+        <div class="compare-panel">
+          <div class="chart-card">
+            <div style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 10px;
+                  ">
+              <div class="chart-title">Multi-Parameter Comparison</div>
+              <select id="cmp-param" class="area-select" onchange="updateCompare()">
+                <option value="overall">Overall Score</option>
+
+                <option value="transport">Transport</option>
+                <option value="swachh">Swachh Score</option>
+                <option value="green">Green Cover %</option>
+              </select>
+            </div>
+            <div style="position: relative; height: 280px">
+              <canvas id="cmp-chart" role="img" aria-label="Comparison chart">Compare chart.</canvas>
+            </div>
+          </div>
+          <div class="compare-table-wrap">
+            <table class="compare-data-table">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>City</th>
+                  <th>State</th>
+                  <th>Overall</th>
+                  <th>AQI</th>
+                  <th>Transport</th>
+                  <th>Swachh</th>
+                  <th>Green%</th>
+                  <th>Pop</th>
+                </tr>
+              </thead>
+              <tbody id="cmp-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- end panel-dashboard -->
+
+    <!-- RANKING MAIN PANEL -->
+    <div class="tab-panel" id="panel-ranking">
+      <div style="padding: 2rem; text-align: center; color: var(--text2)">
+        City Ranking view — select a city from the sidebar to view its
+        dashboard.
+      </div>
+    </div>
+    <div class="tab-panel" id="panel-mapview">
+      <div style="padding: 2rem">
+        <div style="
+                background: var(--card);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                overflow: hidden;
+                height: calc(100vh - 130px);
+              ">
+          <div id="full-map" style="height: 100%; width: 100%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="tab-panel" id="panel-data">
+      <div style="padding: 2rem; color: var(--text2)">
+        Raw data export coming soon.
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <script>
+    /* ===================== DATA ===================== */
+    const CITIES = [
+      {
+        id: 1,
+        name: "Bengaluru",
+        state: "Karnataka",
+
+        pop: "13.2M",
+        tier: "Metro",
+        rank: 1,
+        overall: 49.71,
+        clean: 55.2,
+        walk: 45.7,
+        road: 49.5,
+        aqi_score: 47.3,
+        enc: 61.2,
+        aes: 54.7,
+        dataPoints: 3277,
+        roadsKm: 20.1,
+        wards: "24/243",
+        wardsN: 24,
+        wardsTotal: 243,
+        transport: 84,
+        swachh: 3200,
+        green: 20.2,
+        wasteCol: 78,
+        wasProcess: 68,
+        odf: "ODF",
+        waterQ: 72,
+        metro: true,
+        brt: true,
+        buses: 7200,
+        ebuses: 450,
+        autoK: 95,
+        pm25: 68,
+        pm10: 112,
+        no2: 42,
+        o3: 38,
+        so2: 14,
+        co: 1.2,
+        lat: 12.9716,
+        lng: 77.5946,
+        wards_data: [
+          {
+            name: "Subramanya Nagar",
+            overall: 53.2,
+            clean: 60.57,
+            walk: 49.42,
+            road: 47.3,
+            aqi: 58.62,
+            enc: 62.03,
+            aes: 48.15,
+          },
+          {
+            name: "Subhash Nagar",
+            overall: 48.25,
+            clean: 53.15,
+            walk: 42.32,
+            road: 50.28,
+            aqi: 51.36,
+            enc: 45.65,
+            aes: 55.71,
+          },
+          {
+            name: "Gandhinagar",
+            overall: 50.17,
+            clean: 51.63,
+            walk: 47.57,
+            road: 48.05,
+            aqi: 55.94,
+            enc: 49.68,
+            aes: 61,
+          },
+          {
+            name: "Hoysala Nagar",
+            overall: 48.71,
+            clean: 51.37,
+            walk: 44.88,
+            road: 46.15,
+            aqi: 53.33,
+            enc: 52,
+            aes: 70,
+          },
+          {
+            name: "Konena Agrahara",
+            overall: 49.81,
+            clean: 64,
+            walk: 38.49,
+            road: 61.43,
+            aqi: null,
+            enc: 80,
+            aes: 40,
+          },
+          {
+            name: "Bellanduru",
+            overall: 45.44,
+            clean: 56.98,
+            walk: 35.08,
+            road: 48.38,
+            aqi: 38.6,
+            enc: 68.42,
+            aes: 52.47,
+          },
+          {
+            name: "Marathahalli",
+            overall: 51.41,
+            clean: 56.74,
+            walk: 47.96,
+            road: 48.94,
+            aqi: 40.59,
+            enc: 67.65,
+            aes: 63.06,
+          },
+          {
+            name: "New Thippasandra",
+            overall: 45.68,
+            clean: 57.32,
+            walk: 35.57,
+            road: 51.69,
+            aqi: 47.27,
+            enc: 54.32,
+            aes: 49.18,
+          },
+          {
+            name: "Nagapura",
+            overall: 50.47,
+            clean: 57.2,
+            walk: 47.04,
+            road: 48.37,
+            aqi: 48.74,
+            enc: 57.74,
+            aes: 57.35,
+          },
+          {
+            name: "Sampangiram Nagar",
+            overall: 58.35,
+            clean: 54.74,
+            walk: 53.85,
+            road: 60,
+            aqi: 57.5,
+            enc: 80,
+            aes: 66.67,
+          },
+          {
+            name: "Jayanagar",
+            overall: 62.1,
+            clean: 65.2,
+            walk: 58.3,
+            road: 62.1,
+            aqi: 60.4,
+            enc: 71.0,
+            aes: 72.5,
+          },
+          {
+            name: "Rajajinagar",
+            overall: 44.8,
+            clean: 48.6,
+            walk: 40.1,
+            road: 45.9,
+            aqi: 42.3,
+            enc: 50.1,
+            aes: 44.2,
+          },
+          {
+            name: "Yelahanka",
+            overall: 47.5,
+            clean: 52.3,
+            walk: 44.6,
+            road: 48.7,
+            aqi: 45.9,
+            enc: 53.8,
+            aes: 50.1,
+          },
+          {
+            name: "Electronic City",
+            overall: 55.9,
+            clean: 58.4,
+            walk: 50.2,
+            road: 56.3,
+            aqi: 53.7,
+            enc: 60.1,
+            aes: 58.7,
+          },
+          {
+            name: "Hebbal",
+            overall: 52.3,
+            clean: 56.1,
+            walk: 48.5,
+            road: 53.4,
+            aqi: 50.8,
+            enc: 58.9,
+            aes: 55.3,
+          },
+        ],
+      },
+      {
+        id: 2,
+        name: "Indore",
+        state: "Madhya Pradesh",
+
+        pop: "3.29M",
+        tier: "Tier 1",
+        rank: 2,
+        overall: 87.4,
+        clean: 84,
+        walk: 79,
+        road: 88,
+        aqi_score: 72,
+        enc: 90,
+        aes: 85,
+        dataPoints: 2100,
+        roadsKm: 15.4,
+        wards: "18/85",
+        wardsN: 18,
+        wardsTotal: 85,
+        transport: 78,
+        swachh: 4990,
+        green: 18.2,
+        wasteCol: 94,
+        wasProcess: 88,
+        odf: "ODF++",
+        waterQ: 91,
+        metro: false,
+        brt: true,
+        buses: 550,
+        ebuses: 40,
+        autoK: 12,
+        pm25: 55,
+        pm10: 92,
+        no2: 38,
+        o3: 32,
+        so2: 12,
+        co: 1.0,
+        lat: 22.7196,
+        lng: 75.8577,
+        wards_data: [
+          {
+            name: "Vijay Nagar",
+            overall: 88.2,
+            clean: 86,
+            walk: 82,
+            road: 90,
+            aqi: 75,
+            enc: 92,
+            aes: 87,
+          },
+          {
+            name: "Palasia",
+            overall: 85.1,
+            clean: 82,
+            walk: 78,
+            road: 86,
+            aqi: 70,
+            enc: 88,
+            aes: 83,
+          },
+          {
+            name: "Rajwada",
+            overall: 84.6,
+            clean: 80,
+            walk: 76,
+            road: 84,
+            aqi: 68,
+            enc: 86,
+            aes: 81,
+          },
+          {
+            name: "Bhanwarkuan",
+            overall: 86.8,
+            clean: 84,
+            walk: 80,
+            road: 88,
+            aqi: 73,
+            enc: 90,
+            aes: 85,
+          },
+          {
+            name: "Aerodrome",
+            overall: 90.1,
+            clean: 90,
+            walk: 85,
+            road: 92,
+            aqi: 78,
+            enc: 94,
+            aes: 90,
+          },
+          {
+            name: "Sapna Sangeeta",
+            overall: 83.5,
+            clean: 79,
+            walk: 75,
+            road: 82,
+            aqi: 66,
+            enc: 84,
+            aes: 79,
+          },
+          {
+            name: "Tejaji Nagar",
+            overall: 82.3,
+            clean: 78,
+            walk: 73,
+            road: 80,
+            aqi: 64,
+            enc: 82,
+            aes: 77,
+          },
+          {
+            name: "Scheme 74",
+            overall: 87.9,
+            clean: 85,
+            walk: 81,
+            road: 89,
+            aqi: 74,
+            enc: 91,
+            aes: 86,
+          },
+        ],
+      },
+      {
+        id: 3,
+        name: "Surat",
+        state: "Gujarat",
+
+        pop: "7.78M",
+        tier: "Tier 1",
+        rank: 3,
+        overall: 86.1,
+        clean: 82,
+        walk: 80,
+        road: 85,
+        aqi_score: 69,
+        enc: 87,
+        aes: 82,
+        dataPoints: 1850,
+        roadsKm: 18.2,
+        wards: "22/102",
+        wardsN: 22,
+        wardsTotal: 102,
+        transport: 71,
+        swachh: 4850,
+        green: 14.5,
+        wasteCol: 96,
+        wasProcess: 92,
+        odf: "ODF++",
+        waterQ: 88,
+        metro: false,
+        brt: true,
+        buses: 490,
+        ebuses: 60,
+        autoK: 8.5,
+        pm25: 52,
+        pm10: 88,
+        no2: 36,
+        o3: 30,
+        so2: 11,
+        co: 0.9,
+        lat: 21.1702,
+        lng: 72.8311,
+        wards_data: [
+          {
+            name: "Adajan",
+            overall: 87.5,
+            clean: 84,
+            walk: 81,
+            road: 86,
+            aqi: 70,
+            enc: 88,
+            aes: 83,
+          },
+          {
+            name: "Varachha",
+            overall: 84.2,
+            clean: 80,
+            walk: 77,
+            road: 83,
+            aqi: 66,
+            enc: 85,
+            aes: 80,
+          },
+          {
+            name: "Katargam",
+            overall: 85.8,
+            clean: 82,
+            walk: 79,
+            road: 85,
+            aqi: 68,
+            enc: 87,
+            aes: 82,
+          },
+          {
+            name: "Rander",
+            overall: 86.9,
+            clean: 83,
+            walk: 80,
+            road: 86,
+            aqi: 70,
+            enc: 88,
+            aes: 83,
+          },
+          {
+            name: "Udhna",
+            overall: 83.1,
+            clean: 79,
+            walk: 76,
+            road: 82,
+            aqi: 65,
+            enc: 84,
+            aes: 79,
+          },
+        ],
+      },
+      {
+        id: 4,
+        name: "Pune",
+        state: "Maharashtra",
+
+        pop: "6.63M",
+        tier: "Tier 1",
+        rank: 4,
+        overall: 81.9,
+        clean: 79,
+        walk: 77,
+        road: 80,
+        aqi_score: 63,
+        enc: 82,
+        aes: 78,
+        dataPoints: 2400,
+        roadsKm: 22.6,
+        wards: "20/141",
+        wardsN: 20,
+        wardsTotal: 141,
+        transport: 80,
+        swachh: 4380,
+        green: 16.8,
+        wasteCol: 89,
+        wasProcess: 83,
+        odf: "ODF+",
+        waterQ: 86,
+        metro: true,
+        brt: true,
+        buses: 1200,
+        ebuses: 50,
+        autoK: 22,
+        pm25: 70,
+        pm10: 118,
+        no2: 48,
+        o3: 42,
+        so2: 16,
+        co: 1.5,
+        lat: 18.5204,
+        lng: 73.8567,
+        wards_data: [
+          {
+            name: "Shivajinagar",
+            overall: 84.1,
+            clean: 82,
+            walk: 80,
+            road: 83,
+            aqi: 67,
+            enc: 86,
+            aes: 82,
+          },
+          {
+            name: "Kothrud",
+            overall: 82.6,
+            clean: 80,
+            walk: 78,
+            road: 81,
+            aqi: 65,
+            enc: 84,
+            aes: 80,
+          },
+          {
+            name: "Hadapsar",
+            overall: 79.3,
+            clean: 77,
+            walk: 74,
+            road: 78,
+            aqi: 61,
+            enc: 80,
+            aes: 76,
+          },
+          {
+            name: "Aundh",
+            overall: 83.5,
+            clean: 81,
+            walk: 79,
+            road: 82,
+            aqi: 66,
+            enc: 85,
+            aes: 81,
+          },
+          {
+            name: "Baner",
+            overall: 81.8,
+            clean: 79,
+            walk: 77,
+            road: 80,
+            aqi: 64,
+            enc: 83,
+            aes: 79,
+          },
+        ],
+      },
+      {
+        id: 5,
+        name: "Ahmedabad",
+        state: "Gujarat",
+
+        pop: "8.06M",
+        tier: "Tier 1",
+        rank: 5,
+        overall: 80.4,
+        clean: 77,
+        walk: 74,
+        road: 79,
+        aqi_score: 58,
+        enc: 80,
+        aes: 75,
+        dataPoints: 2200,
+        roadsKm: 19.8,
+        wards: "19/48",
+        wardsN: 19,
+        wardsTotal: 48,
+        transport: 76,
+        swachh: 4220,
+        green: 12.4,
+        wasteCol: 90,
+        wasProcess: 84,
+        odf: "ODF++",
+        waterQ: 84,
+        metro: true,
+        brt: true,
+        buses: 900,
+        ebuses: 35,
+        autoK: 18,
+        pm25: 74,
+        pm10: 128,
+        no2: 52,
+        o3: 45,
+        so2: 20,
+        co: 1.7,
+        lat: 23.0225,
+        lng: 72.5714,
+        wards_data: [
+          {
+            name: "Navrangpura",
+            overall: 82.3,
+            clean: 79,
+            walk: 76,
+            road: 81,
+            aqi: 61,
+            enc: 83,
+            aes: 78,
+          },
+          {
+            name: "Vastrapur",
+            overall: 81.5,
+            clean: 78,
+            walk: 75,
+            road: 80,
+            aqi: 60,
+            enc: 82,
+            aes: 77,
+          },
+          {
+            name: "Satellite",
+            overall: 80.8,
+            clean: 77,
+            walk: 74,
+            road: 79,
+            aqi: 59,
+            enc: 81,
+            aes: 76,
+          },
+        ],
+      },
+      {
+        id: 6,
+        name: "Hyderabad",
+        state: "Telangana",
+
+        pop: "10.0M",
+        tier: "Metro",
+        rank: 6,
+        overall: 78.3,
+        clean: 74,
+        walk: 72,
+        road: 77,
+        aqi_score: 55,
+        enc: 78,
+        aes: 73,
+        dataPoints: 3100,
+        roadsKm: 24.3,
+        wards: "21/150",
+        wardsN: 21,
+        wardsTotal: 150,
+        transport: 84,
+        swachh: 3980,
+        green: 14.6,
+        wasteCol: 87,
+        wasProcess: 81,
+        odf: "ODF+",
+        waterQ: 87,
+        metro: true,
+        brt: false,
+        buses: 3200,
+        ebuses: 80,
+        autoK: 35,
+        pm25: 62,
+        pm10: 104,
+        no2: 58,
+        o3: 44,
+        so2: 19,
+        co: 1.6,
+        lat: 17.385,
+        lng: 78.4867,
+        wards_data: [
+          {
+            name: "Banjara Hills",
+            overall: 80.2,
+            clean: 77,
+            walk: 74,
+            road: 79,
+            aqi: 60,
+            enc: 81,
+            aes: 77,
+          },
+          {
+            name: "Jubilee Hills",
+            overall: 79.5,
+            clean: 76,
+            walk: 73,
+            road: 78,
+            aqi: 59,
+            enc: 80,
+            aes: 76,
+          },
+          {
+            name: "HITEC City",
+            overall: 82.1,
+            clean: 79,
+            walk: 76,
+            road: 81,
+            aqi: 62,
+            enc: 83,
+            aes: 79,
+          },
+        ],
+      },
+      {
+        id: 7,
+        name: "Jaipur",
+        state: "Rajasthan",
+
+        pop: "3.95M",
+        tier: "Tier 1",
+        rank: 7,
+        overall: 79.6,
+        clean: 72,
+        walk: 69,
+        road: 74,
+        aqi_score: 48,
+        enc: 75,
+        aes: 70,
+        dataPoints: 1600,
+        roadsKm: 13.5,
+        wards: "16/91",
+        wardsN: 16,
+        wardsTotal: 91,
+        transport: 60,
+        swachh: 4100,
+        green: 10.2,
+        wasteCol: 84,
+        wasProcess: 76,
+        odf: "ODF+",
+        waterQ: 80,
+        metro: true,
+        brt: false,
+        buses: 680,
+        ebuses: 15,
+        autoK: 14,
+        pm25: 82,
+        pm10: 145,
+        no2: 44,
+        o3: 38,
+        so2: 15,
+        co: 1.3,
+        lat: 26.9124,
+        lng: 75.7873,
+        wards_data: [
+          {
+            name: "Malviya Nagar",
+            overall: 81.1,
+            clean: 74,
+            walk: 71,
+            road: 76,
+            aqi: 51,
+            enc: 77,
+            aes: 73,
+          },
+          {
+            name: "C-Scheme",
+            overall: 80.3,
+            clean: 73,
+            walk: 70,
+            road: 75,
+            aqi: 50,
+            enc: 76,
+            aes: 72,
+          },
+          {
+            name: "Vaishali Nagar",
+            overall: 79.8,
+            clean: 72,
+            walk: 69,
+            road: 74,
+            aqi: 49,
+            enc: 75,
+            aes: 71,
+          },
+        ],
+      },
+      {
+        id: 8,
+        name: "Mumbai",
+        state: "Maharashtra",
+
+        pop: "20.7M",
+        tier: "Metro",
+        rank: 8,
+        overall: 76.5,
+        clean: 70,
+        walk: 68,
+        road: 72,
+        aqi_score: 52,
+        enc: 73,
+        aes: 68,
+        dataPoints: 4200,
+        roadsKm: 28.1,
+        wards: "30/227",
+        wardsN: 30,
+        wardsTotal: 227,
+        transport: 95,
+        swachh: 3600,
+        green: 11.4,
+        wasteCol: 82,
+        wasProcess: 75,
+        odf: "ODF",
+        waterQ: 76,
+        metro: true,
+        brt: false,
+        buses: 3500,
+        ebuses: 200,
+        autoK: 60,
+        pm25: 90,
+        pm10: 155,
+        no2: 72,
+        o3: 55,
+        so2: 24,
+        co: 2.1,
+        lat: 19.076,
+        lng: 72.8777,
+        wards_data: [
+          {
+            name: "Bandra",
+            overall: 78.5,
+            clean: 72,
+            walk: 70,
+            road: 74,
+            aqi: 55,
+            enc: 75,
+            aes: 71,
+          },
+          {
+            name: "Andheri",
+            overall: 75.2,
+            clean: 69,
+            walk: 66,
+            road: 71,
+            aqi: 51,
+            enc: 72,
+            aes: 68,
+          },
+          {
+            name: "Colaba",
+            overall: 79.1,
+            clean: 73,
+            walk: 71,
+            road: 75,
+            aqi: 56,
+            enc: 76,
+            aes: 72,
+          },
+        ],
+      },
+      {
+        id: 9,
+        name: "Bhopal",
+        state: "Madhya Pradesh",
+
+        pop: "1.88M",
+        tier: "Tier 1",
+        rank: 9,
+        overall: 83.2,
+        clean: 80,
+        walk: 76,
+        road: 82,
+        aqi_score: 65,
+        enc: 85,
+        aes: 80,
+        dataPoints: 1400,
+        roadsKm: 12.8,
+        wards: "15/70",
+        wardsN: 15,
+        wardsTotal: 70,
+        transport: 58,
+        swachh: 4650,
+        green: 26.1,
+        wasteCol: 88,
+        wasProcess: 80,
+        odf: "ODF++",
+        waterQ: 85,
+        metro: false,
+        brt: true,
+        buses: 380,
+        ebuses: 20,
+        autoK: 9,
+        pm25: 55,
+        pm10: 92,
+        no2: 38,
+        o3: 32,
+        so2: 12,
+        co: 1.0,
+        lat: 23.2599,
+        lng: 77.4126,
+        wards_data: [
+          {
+            name: "MP Nagar",
+            overall: 85.0,
+            clean: 82,
+            walk: 78,
+            road: 84,
+            aqi: 67,
+            enc: 87,
+            aes: 82,
+          },
+          {
+            name: "Kolar",
+            overall: 82.1,
+            clean: 79,
+            walk: 75,
+            road: 81,
+            aqi: 64,
+            enc: 84,
+            aes: 79,
+          },
+          {
+            name: "Arera Colony",
+            overall: 84.2,
+            clean: 81,
+            walk: 77,
+            road: 83,
+            aqi: 66,
+            enc: 86,
+            aes: 81,
+          },
+        ],
+      },
+      {
+        id: 10,
+        name: "Delhi",
+        state: "NCT Delhi",
+
+        pop: "32.9M",
+        tier: "Metro",
+        rank: 10,
+        overall: 71.2,
+        clean: 62,
+        walk: 60,
+        road: 68,
+        aqi_score: 32,
+        enc: 65,
+        aes: 60,
+        dataPoints: 5100,
+        roadsKm: 35.6,
+        wards: "42/272",
+        wardsN: 42,
+        wardsTotal: 272,
+        transport: 94,
+        swachh: 3200,
+        green: 20.2,
+        wasteCol: 78,
+        wasProcess: 68,
+        odf: "ODF",
+        waterQ: 72,
+        metro: true,
+        brt: true,
+        buses: 7200,
+        ebuses: 450,
+        autoK: 95,
+        pm25: 128,
+        pm10: 242,
+        no2: 84,
+        o3: 65,
+        so2: 28,
+        co: 2.8,
+        lat: 28.6139,
+        lng: 77.209,
+        wards_data: [
+          {
+            name: "Connaught Place",
+            overall: 73.5,
+            clean: 65,
+            walk: 63,
+            road: 70,
+            aqi: 35,
+            enc: 68,
+            aes: 63,
+          },
+          {
+            name: "Lajpat Nagar",
+            overall: 70.2,
+            clean: 61,
+            walk: 59,
+            road: 67,
+            aqi: 31,
+            enc: 64,
+            aes: 59,
+          },
+          {
+            name: "Dwarka",
+            overall: 72.8,
+            clean: 64,
+            walk: 62,
+            road: 69,
+            aqi: 34,
+            enc: 67,
+            aes: 62,
+          },
+          {
+            name: "Saket",
+            overall: 74.1,
+            clean: 66,
+            walk: 64,
+            road: 71,
+            aqi: 36,
+            enc: 69,
+            aes: 64,
+          },
+        ],
+      },
+    ];
+
+    let activeCity = CITIES[0];
+    let tableFilter = "all";
+    let darkMode = true;
+    let charts = {};
+    let leafletMap = null;
+    let fullMap = null;
+    let markers = [];
+
+    /* ---- helpers ---- */
+    function scoreColor(v) {
+      if (v === null || v === undefined) return "var(--text3)";
+      if (v >= 66) return "var(--green)";
+      if (v >= 36) return "var(--gold)";
+      return "var(--red)";
+    }
+    function scoreClass(v) {
+      if (v === null || v === undefined) return "sc-na";
+      if (v >= 66) return "sc-good";
+      if (v >= 36) return "sc-avg";
+      return "sc-poor";
+    }
+    function fmt(v) {
+      return v === null || v === undefined ? "—" : v.toFixed(2);
+    }
+    function gC() {
+      return darkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.06)";
+    }
+    function tC() {
+      return darkMode ? "#50596e" : "#9aa3b5";
+    }
+    function destroyChart(id) {
+      if (charts[id]) {
+        charts[id].destroy();
+        delete charts[id];
+      }
+    }
+
+    /* ---- CITY LIST ---- */
+    function buildCityList() {
+      const el = document.getElementById("city-list");
+      el.innerHTML = "";
+      CITIES.forEach((c, i) => {
+        const rClass = i === 0 ? "r1" : i === 1 ? "r2" : i === 2 ? "r3" : "";
+        const d = document.createElement("div");
+        d.className = "city-row" + (c.id === activeCity.id ? " active" : "");
+        d.innerHTML = `<div class="city-row-rank ${rClass}">${c.rank}</div><div style="flex:1"><div class="city-row-name"> ${c.name}</div><div style="font-size:10px;color:var(--text3)">${c.state}</div></div><div class="city-row-score">${c.overall}</div>`;
+        d.onclick = () => selectCity(c);
+        el.appendChild(d);
+      });
+    }
+
+    function selectCity(city) {
+      activeCity = city;
+      buildCityList();
+      updateDashMain();
+      updateAQI();
+    }
+
+    /* ---- DASHBOARD MAIN ---- */
+    function updateDashMain() {
+      const c = activeCity;
+      document.getElementById("hero-city-name").textContent = c.name;
+      document.getElementById("active-city-pill").textContent = c.name;
+      document.getElementById("map-city-label").textContent = c.name;
+      document.getElementById("stat-rank").textContent =
+        `#${c.rank}/${CITIES.length}`;
+      document.getElementById("stat-dp").textContent =
+        c.dataPoints.toLocaleString();
+      document.getElementById("stat-roads").textContent = c.roadsKm;
+      document.getElementById("stat-wards").textContent = c.wards;
+      const wPct = ((c.wardsN / c.wardsTotal) * 100).toFixed(0);
+      document.getElementById("wards-fill").style.width = wPct + "%";
+
+      // score cells
+      const setScore = (id, v) => {
+        const el = document.getElementById(id);
+        el.textContent = v;
+        el.style.color = scoreColor(v);
+      };
+      setScore("sc-overall", c.overall);
+      setScore("sc-clean", c.clean);
+      setScore("sc-walk", c.walk);
+      setScore("sc-road", c.road);
+      setScore("sc-aqi", c.aqi_score);
+      setScore("sc-enc", c.enc);
+      setScore("sc-aes", c.aes);
+
+      buildSectionCards();
+      buildWardTable();
+      updateMap();
+    }
+
+    function buildSectionCards() {
+      const c = activeCity;
+      const wTotal = c.wards_data.length;
+      const wGood = c.wards_data.filter((w) => w.overall >= 66).length;
+      const wAvg = c.wards_data.filter(
+        (w) => w.overall >= 36 && w.overall < 66,
+      ).length;
+      const wPoor = c.wards_data.filter((w) => w.overall < 36).length;
+
+      const sections = [
+        {
+          icon: "🏘️",
+          title: "Wards",
+          total: wTotal * 100,
+          good: wGood * 100,
+          avg: wAvg * 100,
+          poor: wPoor * 100,
+          pct: ((wGood / Math.max(wTotal, 1)) * 100).toFixed(1),
+        },
+        {
+          icon: "🛣️",
+          title: "Roads",
+          total: Math.round(c.roadsKm * 112),
+          good: Math.round(c.roadsKm * 14),
+          avg: Math.round(c.roadsKm * 82),
+          poor: Math.round(c.roadsKm * 16),
+          pct: 12.7,
+        },
+        {
+          icon: "🏖️",
+          title: "Tourist Areas",
+          total: 494,
+          good: 87,
+          avg: 377,
+          poor: 25,
+          pct: 17.6,
+        },
+        {
+          icon: "🚉",
+          title: "Transit Hubs",
+          total: 437,
+          good: 87,
+          avg: 329,
+          poor: 18,
+          pct: 19.9,
+        },
+      ];
+      const insights = [
+        {
+          title: "Tourist areas and transit hubs lead at 54+ average",
+          score: 54.6,
+          sub: `Tourist areas score well and transit hubs above ward average of 52.19 in ${c.name}.`,
+        },
+        {
+          title: `${c.name} ranks #${c.rank} nationally`,
+          score: c.overall,
+          sub: `Overall urban score with ${c.dataPoints.toLocaleString()} data points collected across ${c.wards} wards.`,
+        },
+        {
+          title: "Encroachment control strongest pillar",
+          score: c.enc,
+          sub: `Encroachment score ${c.enc} leads among all urban quality metrics.`,
+        },
+      ];
+
+      const el = document.getElementById("section-cards");
+      let html = sections
+        .map((s) => {
+          const gPct = ((s.good / (s.total || 1)) * 100).toFixed(0);
+          const aPct = ((s.avg / (s.total || 1)) * 100).toFixed(0);
+          const rPct = ((s.poor / (s.total || 1)) * 100).toFixed(0);
+          return `<div class="area-card">
+      <div class="area-card-header"><span class="area-card-icon">${s.icon}</span>${s.title}</div>
+      <div class="area-stat-row"><span class="area-stat-label">Total Data Points</span><span class="area-stat-val">${s.total.toLocaleString()}</span></div>
+      <div class="area-stat-row"><span class="area-stat-label">Good</span><span class="area-stat-val g">${s.good.toLocaleString()}</span></div>
+      <div class="area-stat-row"><span class="area-stat-label">Average</span><span class="area-stat-val a">${s.avg.toLocaleString()}</span></div>
+      <div class="area-stat-row"><span class="area-stat-label">Poor</span><span class="area-stat-val r">${s.poor.toLocaleString()}</span></div>
+      <div class="area-bar"><div class="area-bar-g" style="width:${gPct}%"></div><div class="area-bar-a" style="width:${aPct}%"></div><div class="area-bar-r" style="width:${rPct}%"></div></div>
+      <div class="area-pct">${s.pct}% good</div>
+    </div>`;
+        })
+        .join("");
+
+      html += `<div class="insights-card">
+    <div class="insights-title">Insights — Good Signals</div>
+    ${insights
+          .map(
+            (ins) => `
+    <div class="insight-chip">
+      <div style="flex:1">
+        <div class="insight-text">${ins.title}</div>
+        <div class="insight-sub">${ins.sub}</div>
+      </div>
+      <div class="insight-score">${ins.score}</div>
+    </div>`,
+          )
+          .join("")}
+  </div>`;
+      el.innerHTML = html;
+    }
+
+    /* ---- WARD TABLE ---- */
+    let allWards = [];
+    function buildWardTable() {
+      allWards = activeCity.wards_data;
+      filterTable();
+    }
+
+    function filterTable() {
+      const search = document
+        .getElementById("table-search")
+        .value.toLowerCase();
+      let data = [...allWards];
+      if (search)
+        data = data.filter((w) => w.name.toLowerCase().includes(search));
+      if (tableFilter === "top5")
+        data = [...data].sort((a, b) => b.overall - a.overall).slice(0, 5);
+      if (tableFilter === "bot5")
+        data = [...data].sort((a, b) => a.overall - b.overall).slice(0, 5);
+
+      const tbody = document.getElementById("ward-tbody");
+      tbody.innerHTML = data
+        .map(
+          (w) => `<tr>
+    <td class="name">${w.name}</td>
+    <td class="${scoreClass(w.overall)}">${fmt(w.overall)}</td>
+    <td class="${scoreClass(w.clean)}">${fmt(w.clean)}</td>
+    <td class="${scoreClass(w.walk)}">${fmt(w.walk)}</td>
+    <td class="${scoreClass(w.road)}">${fmt(w.road)}</td>
+    <td class="${w.aqi === null ? "sc-na" : scoreClass(w.aqi)}">${w.aqi === null ? "—" : fmt(w.aqi)}</td>
+    <td class="${scoreClass(w.enc)}">${fmt(w.enc)}</td>
+    <td class="${scoreClass(w.aes)}">${fmt(w.aes)}</td>
+  </tr>`,
+        )
+        .join("");
+    }
+
+    function setFilter(type, btn) {
+      tableFilter = type;
+      document
+        .querySelectorAll(".filter-btn")
+        .forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      filterTable();
+    }
+
+    /* ---- MAP ---- */
+    function initMap() {
+      leafletMap = L.map("leaflet-map", {
+        zoomControl: true,
+        scrollWheelZoom: false,
+      }).setView([activeCity.lat, activeCity.lng], 11);
+      const tileUrl = darkMode
+        ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+        : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+      L.tileLayer(tileUrl, {
+        attribution: "© OpenStreetMap | © CartoDB",
+        maxZoom: 18,
+      }).addTo(leafletMap);
+      updateMapMarkers();
+    }
+
+    function updateMapMarkers() {
+      if (!leafletMap) return;
+      markers.forEach((m) => m.remove());
+      markers = [];
+      leafletMap.setView([activeCity.lat, activeCity.lng], 11);
+      activeCity.wards_data.forEach((w) => {
+        const jitter = (Math.random() - 0.5) * 0.06;
+        const lat2 = activeCity.lat + (Math.random() - 0.5) * 0.1;
+        const lng2 = activeCity.lng + (Math.random() - 0.5) * 0.1;
+        const col =
+          w.overall >= 66
+            ? "#4ade80"
+            : w.overall >= 36
+              ? "#f5a623"
+              : "#f87171";
+        const circle = L.circleMarker([lat2, lng2], {
+          radius: 8,
+          fillColor: col,
+          color: "#fff",
+          weight: 1.5,
+          opacity: 1,
+          fillOpacity: 0.85,
+        })
+          .bindPopup(
+            `<b>${w.name}</b><br>Score: ${w.overall}<br>Cleanliness: ${w.clean}<br>Walkability: ${w.walk}`,
+          )
+          .addTo(leafletMap);
+        markers.push(circle);
+      });
+    }
+
+    function updateMap() {
+      if (!leafletMap) return;
+      updateMapMarkers();
+    }
+
+    /* ---- AQI ---- */
+    function updateAQI() {
+      const c = activeCity;
+      const aqi = Math.round(c.pm25 * 1.5 + 30);
+      document.getElementById("aqi-number").textContent = aqi;
+      document.getElementById("aqi-city-lbl").textContent =
+        `${c.name} · CPCB`;
+      let cat, col;
+      if (aqi <= 50) {
+        cat = "Good";
+        col = "#4ade80";
+      } else if (aqi <= 100) {
+        cat = "Satisfactory";
+        col = "#86efac";
+      } else if (aqi <= 150) {
+        cat = "Moderate";
+        col = "#f5a623";
+      } else if (aqi <= 200) {
+        cat = "Poor";
+        col = "#f97316";
+      } else if (aqi <= 300) {
+        cat = "Very Poor";
+        col = "#f87171";
+      } else {
+        cat = "Severe";
+        col = "#c084fc";
+      }
+      const badge = document.getElementById("aqi-cat-badge");
+      badge.textContent = cat;
+      badge.style.background = col + "22";
+      badge.style.color = col;
+      document.getElementById("aqi-number").style.color = col;
+      const pct = Math.min(aqi / 400, 1);
+      const ang = -180 + pct * 180;
+      const rad = (ang * Math.PI) / 180;
+      const x2 = 90 + 65 * Math.sin(rad),
+        y2 = 90 - 65 * Math.cos(rad);
+      const n = document.getElementById("aqi-needle");
+      if (n) {
+        n.setAttribute("x2", x2.toFixed(1));
+        n.setAttribute("y2", y2.toFixed(1));
+      }
+
+      const polls = [
+        { name: "PM2.5", val: c.pm25, max: 250, unit: "µg/m³" },
+        { name: "PM10", val: c.pm10, max: 350, unit: "µg/m³" },
+        { name: "NO₂", val: c.no2, max: 200, unit: "µg/m³" },
+        { name: "O₃", val: c.o3, max: 180, unit: "µg/m³" },
+        { name: "SO₂", val: c.so2, max: 80, unit: "µg/m³" },
+        { name: "CO", val: c.co, max: 4, unit: "mg/m³" },
+      ];
+      const pg = document.getElementById("poll-grid");
+      if (pg)
+        pg.innerHTML = polls
+          .map((p) => {
+            const pct2 = Math.min((p.val / p.max) * 100, 100);
+            const pc =
+              pct2 > 60 ? "#f87171" : pct2 > 35 ? "#f5a623" : "#4ade80";
+            return `<div class="poll-chip"><div class="poll-chip-name">${p.name}</div><div class="poll-chip-val" style="color:${pc}">${p.val}</div><div class="poll-chip-unit">${p.unit}</div><div class="poll-chip-bar"><div class="poll-chip-fill" style="width:${pct2.toFixed(0)}%;background:${pc}"></div></div></div>`;
+          })
+          .join("");
+    }
+
+    /* ---- CHART INITS ---- */
+    function initAQICharts() {
+      destroyChart("aqiMini");
+      const base = activeCity.pm25 * 1.5 + 30;
+      const data24 = Array.from({ length: 24 }, (_, i) =>
+        Math.round(base + Math.sin(i / 3) * 20 + (Math.random() * 15 - 7)),
+      );
+      const col = base <= 150 ? "#f5a623" : "#f87171";
+      charts["aqiMini"] = new Chart(document.getElementById("aqi-mini"), {
+        type: "line",
+        data: {
+          labels: Array.from({ length: 24 }, (_, i) => `${i}:00`),
+          datasets: [
+            {
+              data: data24,
+              borderColor: col,
+              backgroundColor: col + "20",
+              fill: true,
+              tension: 0.4,
+              pointRadius: 0,
+              borderWidth: 1.5,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { x: { display: false }, y: { display: false } },
+        },
+      });
+
+      destroyChart("aqiCity");
+      const months = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
+      const cols2 = ["#4f9cf9", "#4ade80", "#f5a623", "#f87171", "#a855f7"];
+      charts["aqiCity"] = new Chart(
+        document.getElementById("aqi-city-chart"),
+        {
+          type: "line",
+          data: {
+            labels: months,
+            datasets: CITIES.slice(0, 5).map((c, i) => ({
+              label: c.name,
+              data: months.map(() =>
+                Math.round(c.pm25 * 1.5 + 30 + (Math.random() * 60 - 30)),
+              ),
+              borderColor: cols2[i],
+              backgroundColor: "transparent",
+              tension: 0.4,
+              borderWidth: 2,
+              pointRadius: 0,
+            })),
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  color: tC(),
+                  font: { size: 10 },
+                  boxWidth: 10,
+                  boxHeight: 3,
+                  padding: 8,
+                },
+              },
+            },
+            scales: {
+              x: {
+                grid: { color: gC() },
+                ticks: { color: tC(), font: { size: 10 } },
+              },
+              y: {
+                grid: { color: gC() },
+                ticks: { color: tC(), font: { size: 10 } },
+              },
+            },
+          },
+        },
+      );
+
+      destroyChart("aqiPie");
+      const cats = {
+        Good: CITIES.filter((c) => c.pm25 * 1.5 + 30 <= 100).length,
+        Moderate: CITIES.filter(
+          (c) => c.pm25 * 1.5 + 30 > 100 && c.pm25 * 1.5 + 30 <= 200,
+        ).length,
+        Poor: CITIES.filter((c) => c.pm25 * 1.5 + 30 > 200).length,
+      };
+      charts["aqiPie"] = new Chart(document.getElementById("aqi-pie"), {
+        type: "doughnut",
+        data: {
+          labels: Object.keys(cats),
+          datasets: [
+            {
+              data: Object.values(cats),
+              backgroundColor: ["#4ade80", "#f5a623", "#f87171"],
+              borderColor: "transparent",
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: "65%",
+          plugins: {
+            legend: {
+              position: "right",
+              labels: {
+                color: tC(),
+                font: { size: 11 },
+                boxWidth: 12,
+                padding: 8,
+              },
+            },
+          },
+        },
+      });
+    }
+
+    function initTransportCharts() {
+      destroyChart("tBar");
+      const sorted = [...CITIES].sort((a, b) => b.transport - a.transport);
+      charts["tBar"] = new Chart(document.getElementById("transport-bar"), {
+        type: "bar",
+        data: {
+          labels: sorted.map((c) => c.name),
+          datasets: [
+            {
+              data: sorted.map((c) => c.transport),
+              backgroundColor: sorted.map((c) =>
+                c.id === activeCity.id ? "#4f9cf9" : "rgba(79,156,249,0.35)",
+              ),
+              borderRadius: 5,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: {
+              grid: { color: gC() },
+              ticks: { color: tC(), font: { size: 10 } },
+            },
+            y: {
+              max: 100,
+              grid: { color: gC() },
+              ticks: { color: tC(), font: { size: 10 } },
+            },
+          },
+        },
+      });
+
+      destroyChart("fleet");
+      charts["fleet"] = new Chart(document.getElementById("fleet-chart"), {
+        type: "doughnut",
+        data: {
+          labels: ["Regular Buses", "e-Buses", "Auto/Rickshaw"],
+          datasets: [
+            {
+              data: [
+                activeCity.buses - activeCity.ebuses,
+                activeCity.ebuses,
+                activeCity.autoK * 100,
+              ],
+              backgroundColor: ["#4f9cf9", "#4ade80", "#f5a623"],
+              borderColor: "transparent",
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: "60%",
+          plugins: {
+            legend: {
+              position: "bottom",
+              labels: {
+                color: tC(),
+                font: { size: 10 },
+                boxWidth: 10,
+                padding: 8,
+              },
+            },
+          },
+        },
+      });
+
+      const mEl = document.getElementById("metro-list"),
+        bEl = document.getElementById("brt-list"),
+        eEl = document.getElementById("ev-list");
+      mEl.innerHTML = "";
+      bEl.innerHTML = "";
+      eEl.innerHTML = "";
+      const row = (c, txt, col) =>
+        `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:var(--bg3);border-radius:7px"><span style="font-size:11px"> ${c.name}</span><span style="font-size:11px;font-weight:600;color:${col};font-family:'IBM Plex Mono',monospace">${txt}</span></div>`;
+      CITIES.forEach((c) => {
+        if (c.metro) mEl.innerHTML += row(c, "Operational", "var(--green)");
+        if (c.brt) bEl.innerHTML += row(c, "Active", "var(--teal)");
+        if (c.ebuses > 0)
+          eEl.innerHTML += row(c, c.ebuses + " buses", "var(--accent)");
+      });
+
+      // Summary cards
+      const tg = document.getElementById("transport-grid");
+      const ac = activeCity;
+      tg.innerHTML = [
+        {
+
+          label: "Metro Rail",
+          val: ac.metro ? "Operational" : "Not Available",
+          active: ac.metro,
+          sub: ac.metro ? "Live network" : "Proposed",
+        },
+        {
+
+          label: "City Buses",
+          val: ac.buses.toLocaleString(),
+          active: true,
+          sub: `${ac.ebuses} electric`,
+        },
+        {
+
+          label: "BRT",
+          val: ac.brt ? "Operational" : "Not Available",
+          active: ac.brt,
+          sub: "Bus Rapid Transit",
+        },
+        {
+
+          label: "Auto Fleet",
+          val: ac.autoK + "K",
+          active: true,
+          sub: "Registered fleet",
+        },
+      ]
+        .map(
+          (t) =>
+            `<div class="t-card"><div class="t-card-label">${t.label}</div><div class="t-card-val">${t.val}</div><div class="t-card-sub"><span class="t-status ${t.active ? "t-on" : "t-off"}"></span>${t.sub}</div></div>`,
+        )
+        .join("");
+    }
+
+    function initSwachhCharts() {
+      destroyChart("swachh");
+      const sorted = [...CITIES].sort((a, b) => b.swachh - a.swachh);
+      charts["swachh"] = new Chart(document.getElementById("swachh-chart"), {
+        type: "bar",
+        data: {
+          labels: sorted.map((c) => c.name),
+          datasets: [
+            {
+              data: sorted.map((c) => c.swachh),
+              backgroundColor: sorted.map((c) =>
+                c.id === activeCity.id ? "#4ade80" : "rgba(74,222,128,0.35)",
+              ),
+              borderRadius: 5,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: {
+              grid: { color: gC() },
+              ticks: { color: tC(), font: { size: 10 } },
+            },
+            y: {
+              grid: { color: gC() },
+              ticks: { color: tC(), font: { size: 10 } },
+            },
+          },
+        },
+      });
+
+      const wb = document.getElementById("waste-bars");
+      wb.innerHTML = "";
+      [
+        {
+          l: "Door-to-door collection",
+          v: activeCity.wasteCol,
+          c: "var(--green)",
+        },
+        {
+          l: "Waste processed %",
+          v: activeCity.wasProcess,
+          c: "var(--teal)",
+        },
+        {
+          l: "Dry waste segregation",
+          v: Math.round(activeCity.wasteCol * 0.85),
+          c: "var(--gold)",
+        },
+      ].forEach((item) => {
+        wb.innerHTML += `<div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="color:var(--text2)">${item.l}</span><span style="font-weight:600;color:${item.c};font-family:'IBM Plex Mono',monospace">${item.v}%</span></div><div style="height:4px;background:var(--bg3);border-radius:2px;overflow:hidden"><div style="height:100%;width:${item.v}%;background:${item.c};border-radius:2px"></div></div></div>`;
+      });
+
+      const odf = document.getElementById("odf-grid");
+      const ac = activeCity;
+      odf.innerHTML = [
+        {
+          l: "ODF Status",
+          v: ac.odf,
+          c:
+            ac.odf === "ODF++"
+              ? "var(--green)"
+              : ac.odf === "ODF+"
+                ? "var(--teal)"
+                : "var(--gold)",
+        },
+        { l: "Water Quality", v: ac.waterQ + "/100", c: "var(--accent)" },
+        { l: "Swachh Rank", v: "#" + ac.rank, c: "var(--gold)" },
+        { l: "Score / 7500", v: ac.swachh, c: "var(--text)" },
+      ]
+        .map(
+          (i) =>
+            `<div style="background:var(--bg3);border-radius:9px;padding:10px"><div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.05em">${i.l}</div><div style="font-size:1.2rem;font-weight:700;font-family:'IBM Plex Mono',monospace;color:${i.c};margin-top:4px">${i.v}</div></div>`,
+        )
+        .join("");
+    }
+
+    let cmpChartInst = null;
+    function updateCompare() {
+      const param = document.getElementById("cmp-param").value;
+      const sorted = [...CITIES].sort((a, b) => b[param] - a[param]);
+      const colMap = {
+        overall: "rgba(99,102,241,0.7)",
+        aqi: "rgba(248,113,113,0.7)",
+        transport: "rgba(79,156,249,0.7)",
+        swachh: "rgba(74,222,128,0.7)",
+        green: "rgba(45,212,191,0.7)",
+      };
+      const bMap = {
+        overall: "#6366f1",
+        aqi: "#f87171",
+        transport: "#4f9cf9",
+        swachh: "#4ade80",
+        green: "#2dd4bf",
+      };
+      destroyChart("cmp");
+      charts["cmp"] = new Chart(document.getElementById("cmp-chart"), {
+        type: "bar",
+        data: {
+          labels: sorted.map((c) => c.name),
+          datasets: [
+            {
+              data: sorted.map((c) => c[param]),
+              backgroundColor: sorted.map((c) =>
+                c.id === activeCity.id ? bMap[param] : colMap[param],
+              ),
+              borderRadius: 5,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: {
+              grid: { color: gC() },
+              ticks: { color: tC(), font: { size: 10 } },
+            },
+            y: {
+              grid: { color: gC() },
+              ticks: { color: tC(), font: { size: 10 } },
+            },
+          },
+        },
+      });
+    }
+
+    function initCompare() {
+      updateCompare();
+      const tbody = document.getElementById("cmp-tbody");
+      tbody.innerHTML = CITIES.map((c) => {
+        const ac2 = c.aqi_score;
+        const aqiC =
+          ac2 >= 66
+            ? "var(--green)"
+            : ac2 >= 36
+              ? "var(--gold)"
+              : "var(--red)";
+        return `<tr>
+      <td><div class="rank-pill">${c.rank}</div></td>
+      <td class="city-name-td"> ${c.name}</td>
+      <td style="font-size:12px;color:var(--text2)">${c.state}</td>
+      <td><div class="sbar"><div class="sbar-bg"><div class="sbar-fill" style="width:${c.overall}%"></div></div><span style="font-size:12px;font-weight:600;font-family:'IBM Plex Mono',monospace">${c.overall}</span></div></td>
+      <td style="font-weight:600;font-family:'IBM Plex Mono',monospace;color:${aqiC}">${c.aqi_score}</td>
+      <td style="font-family:'IBM Plex Mono',monospace">${c.transport}</td>
+      <td style="font-family:'IBM Plex Mono',monospace">${c.swachh.toLocaleString()}</td>
+      <td style="color:var(--green);font-family:'IBM Plex Mono',monospace">${c.green}%</td>
+      <td style="color:var(--text2);font-size:11px">${c.pop}</td>
+    </tr>`;
+      }).join("");
+    }
+
+    /* ---- TAB SWITCHING ---- */
+    function switchMain(tab, btn) {
+      document
+        .querySelectorAll(".topbar .nav-tab")
+        .forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      document
+        .querySelectorAll(".layout .tab-panel")
+        .forEach((p) => p.classList.remove("active"));
+      document.getElementById("panel-" + tab).classList.add("active");
+      if (tab === "mapview") initFullMap();
+    }
+
+    function switchDash(sub, btn) {
+      const row = btn.closest("div");
+      row
+        .querySelectorAll(".nav-tab")
+        .forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      const parent = document.getElementById("panel-dashboard");
+      parent
+        .querySelectorAll(".tab-panel")
+        .forEach((p) => p.classList.remove("active"));
+      document.getElementById("dash-" + sub).classList.add("active");
+      if (sub === "aqi") {
+        updateAQI();
+        setTimeout(initAQICharts, 50);
+      }
+      if (sub === "transport") setTimeout(initTransportCharts, 50);
+      if (sub === "swachh") setTimeout(initSwachhCharts, 50);
+      if (sub === "compare") setTimeout(initCompare, 50);
+    }
+
+    /* ---- FULL MAP ---- */
+    function initFullMap() {
+      if (fullMap) return;
+      fullMap = L.map("full-map", { scrollWheelZoom: true }).setView(
+        [20.5937, 78.9629],
+        5,
+      );
+      const tileUrl = darkMode
+        ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+        : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+      L.tileLayer(tileUrl, {
+        attribution: "© OpenStreetMap | © CartoDB",
+        maxZoom: 18,
+      }).addTo(fullMap);
+      CITIES.forEach((c) => {
+        const sc =
+          c.overall >= 66
+            ? "#4ade80"
+            : c.overall >= 36
+              ? "#f5a623"
+              : "#f87171";
+        L.circleMarker([c.lat, c.lng], {
+          radius: 12,
+          fillColor: sc,
+          color: "#fff",
+          weight: 2,
+          fillOpacity: 0.9,
+        })
+          .bindPopup(
+            `<b> ${c.name}</b><br>Score: <b style="color:${sc}">${c.overall}</b><br>${c.state}`,
+          )
+          .addTo(fullMap);
+      });
+    }
+
+    /* ---- THEME ---- */
+
+    function toggleTheme() {
+      darkMode = !darkMode;
+      document.documentElement.dataset.theme = darkMode ? '' : 'light';
+      document.getElementById('theme-btn').textContent = darkMode ? '🌙' : '☀️';
+
+      // Destroy all charts so they repaint with new colors
+      Object.keys(charts).forEach(k => destroyChart(k));
+
+      // Reinit map with new tile layer
+      if (leafletMap) {
+        leafletMap.remove();
+        leafletMap = null;
+        setTimeout(() => { initMap(); }, 100);
+      }
+
+      // Reinit whichever sub-panel is currently visible
+      const active = document.querySelector('#panel-dashboard .tab-panel.active');
+      if (!active) return;
+      const id = active.id;
+      if (id === 'dash-aqi') { updateAQI(); setTimeout(initAQICharts, 50); }
+      if (id === 'dash-transport') setTimeout(initTransportCharts, 50);
+      if (id === 'dash-swachh') setTimeout(initSwachhCharts, 50);
+      if (id === 'dash-compare') setTimeout(initCompare, 50);
+      // dash-main re-renders via updateDashMain automatically since map is reinited above
+    }
+
+    /* ---- INIT ---- */
+    buildCityList();
+    updateDashMain();
+    updateAQI();
+    setTimeout(() => {
+      initMap();
+    }, 200);
+  </script>
+</body>
+
+</html>
