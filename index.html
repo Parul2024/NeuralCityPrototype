@@ -1381,7 +1381,7 @@
               height: 44px;
             "
           > -->
-        <div
+        <!-- <div
           style="background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0 0.75rem; display: flex; gap: 2px; align-items: center; height: 44px; overflow-x: auto; -webkit-overflow-scrolling: touch;">
         </div>
         <button class="nav-tab active" style="font-size: 12px; padding: 5px 14px; white-space: nowrap;" onclick="switchDash('main', this)">
@@ -1399,7 +1399,14 @@
         <button class="nav-tab" style="font-size: 12px; padding: 5px 14px; white-space: nowrap" onclick="switchDash('compare', this)">
           Compare Cities
         </button>
-      </div>
+      </div>    -->
+      <div style="background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0 0.75rem; display: flex; gap: 2px; align-items: center; height: 44px; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+  <button class="nav-tab active" style="font-size: 12px; padding: 5px 14px; white-space: nowrap;" onclick="switchDash('main', this)">Dashboard</button>
+  <button class="nav-tab" style="font-size: 12px; padding: 5px 14px; white-space: nowrap;" onclick="switchDash('aqi', this)">Air Quality</button>
+  <button class="nav-tab" style="font-size: 12px; padding: 5px 14px; white-space: nowrap;" onclick="switchDash('transport', this)">Public Transport</button>
+  <button class="nav-tab" style="font-size: 12px; padding: 5px 14px; white-space: nowrap;" onclick="switchDash('swachh', this)">Swachh Rankings</button>
+  <button class="nav-tab" style="font-size: 12px; padding: 5px 14px; white-space: nowrap;" onclick="switchDash('compare', this)">Compare Cities</button>
+</div>
 
       <!-- MAIN DASH -->
       <div id="dash-main" class="tab-panel active">
