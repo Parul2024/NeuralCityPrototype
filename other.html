@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -419,7 +419,8 @@ img {
   <button onclick="window.history.back()" style="padding:6px 14px; border-radius:8px; border:1px solid var(--border2); background:transparent; color:var(--text); font-family:'DM Sans',sans-serif; font-size:13px; cursor:pointer;">← Back</button>
   <span style="font-size:14px; font-weight:600; color:var(--text);">Dashboard</span>
 </div>
-    <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">🌙</button>
+    
+    <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">☀️</button>
     <span class="beta-tag">Sign In</span>
     <button class="hamburger" onclick="toggleDrawer()" aria-label="Menu">
       <span></span><span></span><span></span>
@@ -721,10 +722,11 @@ function thClick(col) {
 // ── THEME ─────────────────────────────────────────────────────────────────────
 function toggleTheme() {
   const html=document.documentElement;
-  const dark = html.getAttribute('data-theme')==='light';
+  const dark = html.getAttribute('data-theme')==='dark';
   html.setAttribute('data-theme', dark?'light':'dark');
   document.getElementById('theme-btn').textContent = dark?'🌙':'☀️';
 }
+ 
 
 // ── DRAWER ────────────────────────────────────────────────────────────────────
 function toggleDrawer() {
@@ -876,6 +878,7 @@ render();
 
 // set initial theme icon
 document.getElementById('theme-btn').textContent = '🌙';
+ 
 
 // close drawer on resize
 window.addEventListener('resize', () => {
