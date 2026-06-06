@@ -721,7 +721,7 @@ function thClick(col) {
 // ── THEME ─────────────────────────────────────────────────────────────────────
 function toggleTheme() {
   const html=document.documentElement;
-  const dark = html.getAttribute('data-theme')==='dark';
+  const dark = html.getAttribute('data-theme')==='light';
   html.setAttribute('data-theme', dark?'light':'dark');
   document.getElementById('theme-btn').textContent = dark?'🌙':'☀️';
 }
