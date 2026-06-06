@@ -2907,14 +2907,7 @@ function doSignOut() {
       buildWardTable();
       updateMap();
     }
-    function switchMain(tab, btn) {
-  document.querySelectorAll('.topbar .nav-tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  // Only target DIRECT child panels of .content, not nested ones
-  document.querySelectorAll('.content > .tab-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('panel-' + tab).classList.add('active');
-  if (tab === 'mapview') initFullMap();
-}
+    
 
     function buildSectionCards() {
       const c = activeCity;
@@ -3593,38 +3586,54 @@ function doSignOut() {
     }
 
     /* ---- TAB SWITCHING ---- */
-    function switchMain(tab, btn) {
-      document
-        .querySelectorAll(".topbar .nav-tab")
-        .forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      document
-        .querySelectorAll(".layout .tab-panel")
-        .forEach((p) => p.classList.remove("active"));
-      document.getElementById("panel-" + tab).classList.add("active");
-      if (tab === "mapview") initFullMap();
-    }
+    // function switchMain(tab, btn) {
+    //   document
+    //     .querySelectorAll(".topbar .nav-tab")
+    //     .forEach((b) => b.classList.remove("active"));
+    //   btn.classList.add("active");
+    //   document
+    //     .querySelectorAll(".layout .tab-panel")
+    //     .forEach((p) => p.classList.remove("active"));
+    //   document.getElementById("panel-" + tab).classList.add("active");
+    //   if (tab === "mapview") initFullMap();
+    // }
+   
+function switchMain(tab, btn) {
+  document.querySelectorAll(".topbar .nav-tab")
+    .forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
 
-    function switchDash(sub, btn) {
-      const row = btn.closest("div");
-      row
-        .querySelectorAll(".nav-tab")
-        .forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      const parent = document.getElementById("panel-dashboard");
-      parent
-        .querySelectorAll(".tab-panel")
-        .forEach((p) => p.classList.remove("active"));
-      document.getElementById("dash-" + sub).classList.add("active");
-      if (sub === "aqi") {
-        updateAQI();
-        setTimeout(initAQICharts, 50);
-      }
-      if (sub === "transport") setTimeout(initTransportCharts, 50);
-      if (sub === "swachh") setTimeout(initSwachhCharts, 50);
-      if (sub === "compare") setTimeout(initCompare, 50);
-    }
+  // hide only known top-level panels by id
+  ["dashboard", "mapview", "ranking", "data"].forEach(id => {
+    const el = document.getElementById("panel-" + id);
+    if (el) el.classList.remove("active");
+  });
 
+  document.getElementById("panel-" + tab).classList.add("active");
+  if (tab === "mapview") initFullMap();
+}
+// REPLACE the entire switchDash function with:
+function switchDash(sub, btn) {
+  // deactivate all sub-tab buttons
+  btn.closest("div").querySelectorAll(".nav-tab")
+    .forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+
+  // hide only the known dash sub-panels by id
+  ["main", "aqi", "transport", "swachh", "compare"].forEach(id => {
+    const el = document.getElementById("dash-" + id);
+    if (el) el.classList.remove("active");
+  });
+
+  // show the selected one
+  document.getElementById("dash-" + sub).classList.add("active");
+
+  if (sub === "aqi") { updateAQI(); setTimeout(initAQICharts, 50); }
+  if (sub === "transport") setTimeout(initTransportCharts, 50);
+  if (sub === "swachh") setTimeout(initSwachhCharts, 50);
+  if (sub === "compare") setTimeout(initCompare, 50);
+}
+    
     /* ---- FULL MAP ---- */
     function initFullMap() {
       if (fullMap) return;
