@@ -1326,6 +1326,59 @@
       align-items: center;
       justify-content: center;
     }
+    /* Glowing card borders */
+.area-card,
+.chart-card,
+.t-card,
+.aqi-gauge-card,
+.insights-card,
+.compare-table-wrap,
+.table-container,
+.map-container {
+  border: 1px solid rgba(79, 156, 249, 0.18);
+  box-shadow: 0 0 0 1px rgba(79, 156, 249, 0.06),
+              inset 0 0 20px rgba(79, 156, 249, 0.03);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.area-card:hover,
+.chart-card:hover,
+.t-card:hover {
+  border-color: rgba(79, 156, 249, 0.35);
+  box-shadow: 0 0 0 1px rgba(79, 156, 249, 0.12),
+              0 0 16px rgba(79, 156, 249, 0.08),
+              inset 0 0 20px rgba(79, 156, 249, 0.04);
+}
+
+/* Score cells subtle glow */
+.score-cell,
+.stat-block,
+.hero-city-block,
+.criteria-cell {
+  border: 1px solid rgba(79, 156, 249, 0.12);
+  box-shadow: inset 0 0 12px rgba(79, 156, 249, 0.03);
+}
+
+/* Light mode adjustments — no glow needed, use soft shadow instead */
+[data-theme="light"] .area-card,
+[data-theme="light"] .chart-card,
+[data-theme="light"] .t-card,
+[data-theme="light"] .aqi-gauge-card,
+[data-theme="light"] .insights-card,
+[data-theme="light"] .compare-table-wrap,
+[data-theme="light"] .table-container,
+[data-theme="light"] .map-container {
+  border: 1px solid rgba(79, 156, 249, 0.2);
+  box-shadow: 0 2px 12px rgba(79, 156, 249, 0.08);
+}
+
+[data-theme="light"] .score-cell,
+[data-theme="light"] .stat-block,
+[data-theme="light"] .hero-city-block,
+[data-theme="light"] .criteria-cell {
+  border: 1px solid rgba(79, 156, 249, 0.15);
+  box-shadow: 0 1px 6px rgba(79, 156, 249, 0.06);
+}
   </style>
 </head>
 
@@ -2854,6 +2907,14 @@ function doSignOut() {
       buildWardTable();
       updateMap();
     }
+    function switchMain(tab, btn) {
+  document.querySelectorAll('.topbar .nav-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // Only target DIRECT child panels of .content, not nested ones
+  document.querySelectorAll('.content > .tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  if (tab === 'mapview') initFullMap();
+}
 
     function buildSectionCards() {
       const c = activeCity;
@@ -3626,9 +3687,8 @@ function doSignOut() {
       if (id === 'dash-compare') setTimeout(initCompare, 50);
       // dash-main re-renders via updateDashMain automatically since map is reinited above
     }
-    function goToRanking() {
-  window.history.pushState({ page: 'ranking' }, '', '/other.html');
-  showPage('ranking');
+   function goToRanking() {
+  window.location.href = 'other.html';
 }
 
 function showPage(page) {
