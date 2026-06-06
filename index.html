@@ -1337,7 +1337,7 @@
     </div>
     <div class="nav-tabs">
 
-      <button class="nav-tab" onclick="window.open('other.html','_blank')">
+      <button class="nav-tab" onclick="goToRanking()">
         City Ranking
       </button>
       <button class="nav-tab active" onclick="switchMain('dashboard', this)">
@@ -1354,7 +1354,7 @@
       <button class="icon-btn" onclick="toggleTheme()" id="theme-btn" title="Toggle theme">
         🌙
       </button>
-      <button class="signout-btn">Sign out</button>
+      <button class="signout-btn" id="signout-btn" onclick="openAuth()">Sign in</button>
     </div>
   </div>
 
@@ -1369,37 +1369,7 @@
     <div class="content">
       <!-- SECONDARY TABS inside Dashboard -->
       <div class="tab-panel active" id="panel-dashboard">
-        <!-- inner tabs row -->
-        <!-- <div
-            style="
-              background: var(--bg2);
-              border-bottom: 1px solid var(--border);
-              padding: 0 1.5rem;
-              display: flex;
-              gap: 4px;
-              align-items: center;
-              height: 44px;
-            "
-          > -->
-        <!-- <div
-          style="background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0 0.75rem; display: flex; gap: 2px; align-items: center; height: 44px; overflow-x: auto; -webkit-overflow-scrolling: touch;">
-        </div>
-        <button class="nav-tab active" style="font-size: 12px; padding: 5px 14px; white-space: nowrap;" onclick="switchDash('main', this)">
-          Dashboard
-        </button>
-        <button class="nav-tab" style="font-size: 12px; padding: 5px 14px; white-space: nowrap;" onclick="switchDash('aqi', this)">
-          Air Quality
-        </button>
-        <button class="nav-tab" style="font-size: 12px; padding: 5px 14px; white-space: nowrap;" onclick="switchDash('transport', this)">
-          Public Transport
-        </button>
-        <button class="nav-tab" style="font-size: 12px; padding: 5px 14px; white-space: nowrap;" onclick="switchDash('swachh', this)">
-          Swachh Rankings
-        </button>
-        <button class="nav-tab" style="font-size: 12px; padding: 5px 14px; white-space: nowrap" onclick="switchDash('compare', this)">
-          Compare Cities
-        </button>
-      </div>    -->
+       
       <div style="background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0 0.75rem; display: flex; gap: 2px; align-items: center; height: 44px; overflow-x: auto; -webkit-overflow-scrolling: touch;">
   <button class="nav-tab active" style="font-size: 12px; padding: 5px 14px; white-space: nowrap;" onclick="switchDash('main', this)">Dashboard</button>
   <button class="nav-tab" style="font-size: 12px; padding: 5px 14px; white-space: nowrap;" onclick="switchDash('aqi', this)">Air Quality</button>
@@ -1808,9 +1778,37 @@
       </div>
     </div>
   </div>
-  </div>
+  </div> 
 
   <script>
+    // Simple credential check — replace with real auth later
+const VALID_USER = { email: 'admin@neuralcity.in', password: 'neural123' };
+let isLoggedIn = false;
+
+function openAuth() {
+  document.getElementById('auth-modal').style.display = 'flex';
+}
+function closeAuth() {
+  document.getElementById('auth-modal').style.display = 'none';
+  document.getElementById('auth-error').style.display = 'none';
+}
+function doSignIn() {
+  const email = document.getElementById('auth-email').value;
+  const pass = document.getElementById('auth-pass').value;
+  if (email === VALID_USER.email && pass === VALID_USER.password) {
+    isLoggedIn = true;
+    closeAuth();
+    document.getElementById('signout-btn').textContent = 'Sign out';
+    document.getElementById('signout-btn').onclick = doSignOut;
+  } else {
+    document.getElementById('auth-error').style.display = 'block';
+  }
+}
+function doSignOut() {
+  isLoggedIn = false;
+  document.getElementById('signout-btn').textContent = 'Sign in';
+  document.getElementById('signout-btn').onclick = openAuth;
+}
     /* ===================== DATA ===================== */
     const CITIES = [
       {
@@ -3628,6 +3626,20 @@
       if (id === 'dash-compare') setTimeout(initCompare, 50);
       // dash-main re-renders via updateDashMain automatically since map is reinited above
     }
+    function goToRanking() {
+  window.history.pushState({ page: 'ranking' }, '', '/other.html');
+  showPage('ranking');
+}
+
+function showPage(page) {
+  document.getElementById('page-dashboard').style.display = page === 'dashboard' ? '' : 'none';
+  document.getElementById('page-ranking').style.display = page === 'ranking' ? '' : 'none';
+}
+
+window.addEventListener('popstate', (e) => {
+  const page = e.state?.page || 'dashboard';
+  showPage(page);
+});
 
     /* ---- INIT ---- */
     buildCityList();
@@ -3637,6 +3649,16 @@
       initMap();
     }, 200);
   </script>
+  <div id="auth-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:999; align-items:center; justify-content:center;">
+  <div style="background:var(--card); border:1px solid var(--border2); border-radius:16px; padding:2rem; width:340px; display:flex; flex-direction:column; gap:1rem;">
+    <div style="font-size:1.1rem; font-weight:700;">Sign in to Neural City</div>
+    <input id="auth-email" type="email" placeholder="Email" style="padding:10px 12px; border-radius:8px; border:1px solid var(--border2); background:var(--bg3); color:var(--text); font-family:'DM Sans',sans-serif; font-size:13px; outline:none;"/>
+    <input id="auth-pass" type="password" placeholder="Password" style="padding:10px 12px; border-radius:8px; border:1px solid var(--border2); background:var(--bg3); color:var(--text); font-family:'DM Sans',sans-serif; font-size:13px; outline:none;"/>
+    <div id="auth-error" style="font-size:12px; color:var(--red); display:none;">Invalid email or password.</div>
+    <button onclick="doSignIn()" style="padding:10px; border-radius:8px; background:var(--accent); color:#fff; border:none; font-weight:600; font-size:14px; cursor:pointer;">Sign In</button>
+    <button onclick="closeAuth()" style="padding:8px; border-radius:8px; background:transparent; border:1px solid var(--border2); color:var(--text2); font-size:13px; cursor:pointer;">Cancel</button>
+  </div>
+</div>
 </body>
 
 </html>
